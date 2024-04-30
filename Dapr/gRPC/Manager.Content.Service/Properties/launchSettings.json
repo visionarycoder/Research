@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Manager.Content.Service": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

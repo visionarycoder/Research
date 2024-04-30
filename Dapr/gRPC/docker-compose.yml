@@ -1,0 +1,100 @@
+services:
+
+  dapr.placement:
+    image: daprio/dapr
+    command: ["./placement", "-port", "50005"]
+    ports:
+      - "50005:50005"
+
+  rabbitmq:
+    image: rabbitmq:3-management
+
+  access.numbers.service:
+    image: ${DOCKER_REGISTRY-}accessnumbersservice
+    build:
+      context: .
+      dockerfile: Access.Numbers.Service/Dockerfile
+  
+  access.numbers.service.dapr:
+    image: daprio/daprd:latest
+    command: ["./daprd", "-app-id", "accessnumbersservice", "-app-port", "5000", "-dapr-http-port", "3500", "-placement-host-address", "placement:50005", "-config", "config.yaml"]
+    network_mode: "service:access.numbers.service"
+    volumes:
+      - ./Access.Numbers.Service/config.yaml:/config.yaml
+    depends_on:
+      - access.numbers.service
+ 
+  engine.calculator.service:
+    image: ${DOCKER_REGISTRY-}enginecalculatorservice
+    build:
+      context: .
+      dockerfile: Engine.Calculator.Service/Dockerfile
+    depends_on:
+      - access.numbers.service
+      - access.numbers.service.dapr
+  
+  engine.calculator.service.dapr:
+    image: daprio/daprd:latest
+    command: ["./daprd", "-app-id", "enginecalculatorservice", "-app-port", "5000", "-dapr-http-port", "3500", "-placement-host-address", "placement:50005", "-config", "config.yaml"]
+    network_mode: "service:engine.calculator.service"
+    volumes:
+      - ./Engine.Calculator.Service/config.yaml:/config.yaml
+    depends_on:
+      - engine.calculator.service
+      - access.numbers.service
+      - access.numbers.service.dapr
+ 
+  manager.content.service:
+    image: ${DOCKER_REGISTRY-}managercontentservice
+    build:
+      context: .
+      dockerfile: Manager.Content.Service/Dockerfile
+    depends_on:
+      - engine.calculator.service
+      - engine.calculator.service.dapr
+      - access.numbers.service
+      - access.numbers.service.dapr
+      - rabbitmq
+       
+  manager.content.service.dapr:
+    image: daprio/daprd:latest
+    command: ["./daprd", "-app-id", "managercontentservice", "-app-port", "5000", "-dapr-http-port", "3500", "-placement-host-address", "placement:50005", "-config", "config.yaml"]
+    network_mode: "service:manager.content.service"
+    volumes:
+      - ./Manager.Content.Service/config.yaml:/config.yaml
+    depends_on:
+      - manager.content.service
+      - engine.calculator.service
+      - engine.calculator.service.dapr
+      - access.numbers.service
+      - access.numbers.service.dapr
+      - rabbitmq
+ 
+  client.consoleapp:
+    image: ${DOCKER_REGISTRY-}clientconsoleapp
+    build:
+      context: .
+      dockerfile: Client.ConsoleApp/Dockerfile
+    depends_on:
+      - manager.content.service
+      - manager.content.service.dapr
+      - engine.calculator.service
+      - engine.calculator.service.dapr
+      - access.numbers.service
+      - access.numbers.service.dapr
+      - rabbitmq
+
+  client.webapp:
+    image: ${DOCKER_REGISTRY-}clientwebapp
+    build:
+      context: .
+      dockerfile: Client.WebApp/Dockerfile
+    depends_on:
+      - manager.content.service
+      - manager.content.service.dapr
+      - engine.calculator.service
+      - engine.calculator.service.dapr
+      - access.numbers.service
+      - access.numbers.service.dapr
+      - rabbitmq
+  

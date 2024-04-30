@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "Docker Compose": {
+      "commandName": "DockerCompose",
+      "commandVersion": "1.0",
+      "serviceActions": {
+        "client.webapp": "StartDebugging",
+        "access.numbers.service": "StartDebugging",
+        "engine.calculator.service": "StartDebugging",
+        "manager.content.service": "StartDebugging",
+        "client.consoleapp": "StartDebugging"
+      }
+    }
+  }
+}
